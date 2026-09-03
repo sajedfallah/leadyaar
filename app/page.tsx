@@ -48,20 +48,13 @@ const EMPTY_PROFILE: BusinessProfile = {
   averageValue: undefined,
 };
 
-function telegramHeaders() {
-  const initData = typeof window !== "undefined" ? window.Telegram?.WebApp?.initData ?? "" : "";
-  return initData ? { "x-telegram-init-data": initData } : {};
-}
-
 async function api<T>(url: string, options: RequestInit = {}) {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...telegramHeaders(),
-      ...(options.headers ?? {}),
-    },
-  });
+  const headers = new Headers(options.headers);
+  headers.set("Content-Type", "application/json");
+  const initData = typeof window !== "undefined" ? window.Telegram?.WebApp?.initData ?? "" : "";
+  if (initData) headers.set("x-telegram-init-data", initData);
+
+  const response = await fetch(url, { ...options, headers });
   const data = (await response.json()) as T & { ok?: boolean; error?: string };
   if (!response.ok) throw new Error(data.error || "درخواست ناموفق بود");
   return data;
